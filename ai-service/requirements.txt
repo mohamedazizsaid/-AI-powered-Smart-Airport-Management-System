@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+scikit-learn
+tensorflow
+numpy
+requests
+opencv-python
+transformers
+torch
+python-multipart
