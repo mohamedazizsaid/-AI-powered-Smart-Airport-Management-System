@@ -133,4 +133,19 @@ export class AIService {
             throw error;
         }
     }
+
+    async predictAnalytics(context: string, horizonHours: number = 24) {
+        try {
+            const response = (await firstValueFrom(
+                this.httpService.post(`${this.aiBaseUrl}/analytics/predict`, {
+                    context,
+                    horizon_hours: horizonHours,
+                }),
+            )) as any;
+            return response.data;
+        } catch (error) {
+            this.logger.error(`Error predicting analytics for ${context}: ${error.message}`);
+            throw error;
+        }
+    }
 }

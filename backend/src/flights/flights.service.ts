@@ -44,20 +44,29 @@ export class FlightsService {
 
         // Use AI to get optimal gate
         const optimization = await this.aiService.predictFlightOptimization({
-            flightNumber: flight.flightNumber,
-            origin: flight.origin,
-            destination: flight.destination,
-            scheduledTime: flight.scheduledDeparture
+            flights: [{
+                id: (flight as any)._id,
+                flightNumber: flight.flightNumber,
+                airline: flight.airline,
+                origin: flight.origin,
+                destination: flight.destination,
+                scheduledDeparture: flight.scheduledDeparture,
+                scheduledArrival: flight.scheduledArrival
+            }]
         });
+
+        // The AI service returns a list of suggestions
+        const suggestion = optimization.suggestions[0];
 
         // Update flight with AI recommended gate
         const updatedFlight = await this.update(flightId, {
-            gateAssignment: optimization.suggestedGate || 'A1'
+            gateAssignment: suggestion?.recommendedGate || 'A1',
+            terminal: suggestion?.terminal || 'T1'
         });
 
         return {
             flight: updatedFlight,
-            aiReasoning: optimization.reasoning || 'Optimization based on turn-around time efficiency'
+            aiReasoning: suggestion?.reasoning || 'Optimization based on turn-around time efficiency'
         };
     }
 }
