@@ -86,59 +86,80 @@ const MaintenanceView: React.FC = () => {
                         <motion.div
                             key={i}
                             whileHover={{ y: -5 }}
-                            className="glass-morphism p-5 rounded-2xl border border-white/5 relative overflow-hidden"
+                            className="glass-card p-6 border border-white/5 relative overflow-hidden group"
                         >
-                            <div className={`absolute top-0 right-0 w-24 h-24 blur-3xl -mr-12 -mt-12 rounded-full ${asset.status === 'Critical' ? 'bg-red-500/20' : asset.status === 'Warning' ? 'bg-orange-500/20' : 'bg-emerald-500/20'
+                            <div className={`absolute top-0 right-0 w-32 h-32 blur-3xl -mr-16 -mt-16 rounded-full opacity-20 transition-opacity group-hover:opacity-30 ${asset.status === 'Critical' ? 'bg-red-500' :
+                                    asset.status === 'Warning' ? 'bg-orange-500' : 'bg-emerald-500'
                                 }`} />
 
-                            <div className="flex justify-between items-start mb-4">
-                                <div className={`p-2 rounded-lg ${asset.status === 'Critical' ? 'bg-red-500/10 text-red-500' : asset.status === 'Warning' ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'
+                            <div className="flex justify-between items-start mb-6">
+                                <div className={`p-3 rounded-xl ${asset.status === 'Critical' ? 'bg-red-500/10 text-red-500' :
+                                        asset.status === 'Warning' ? 'bg-orange-500/10 text-orange-500' : 'bg-emerald-500/10 text-emerald-500'
                                     }`}>
                                     {asset.status === 'Critical' ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
                                 </div>
-                                <span className="text-[10px] font-mono text-slate-500">{asset.id}</span>
-                            </div>
-
-                            <h3 className="font-bold text-slate-200 mb-1">{asset.type}</h3>
-                            <div className="flex justify-between text-xs mb-3">
-                                <span className="text-slate-500">Wear Level</span>
-                                <span className={`font-bold ${asset.wear > 80 ? 'text-red-500' : asset.wear > 50 ? 'text-orange-500' : 'text-emerald-500'}`}>
-                                    {asset.wear}%
+                                <span className="text-[10px] font-mono font-bold text-slate-600 tracking-wider bg-black/30 px-2 py-1 rounded">
+                                    {asset.id}
                                 </span>
                             </div>
 
-                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-4">
-                                <div
-                                    className={`h-full transition-all duration-1000 ${asset.wear > 80 ? 'bg-red-500' : asset.wear > 50 ? 'bg-orange-500' : 'bg-emerald-500'
+                            <h3 className="font-black text-white mb-2 tracking-tight">{asset.type}</h3>
+
+                            <div className="flex justify-between items-end mb-4">
+                                <div>
+                                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-1">Wear Level</p>
+                                    <p className={`text-2xl font-black ${asset.wear > 80 ? 'text-red-500' :
+                                            asset.wear > 50 ? 'text-orange-500' : 'text-emerald-500'
+                                        }`}>
+                                        {asset.wear}%
+                                    </p>
+                                </div>
+                                <div className={`status-badge ${asset.status === 'Critical' ? 'status-badge-danger' :
+                                        asset.status === 'Warning' ? 'status-badge-warning' : 'status-badge-success'
+                                    }`}>
+                                    {asset.status}
+                                </div>
+                            </div>
+
+                            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-6 shadow-inner">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${asset.wear}%` }}
+                                    transition={{ duration: 1, ease: "easeOut" }}
+                                    className={`h-full shadow-[0_0_10px_rgba(255,255,255,0.1)] ${asset.wear > 80 ? 'bg-red-500' :
+                                            asset.wear > 50 ? 'bg-orange-500' : 'bg-emerald-500'
                                         }`}
-                                    style={{ width: `${asset.wear}%` }}
                                 />
                             </div>
 
-                            <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                <Clock size={12} />
-                                <span>Next Check: {asset.next}</span>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                <Clock size={12} className="text-airport-accent" />
+                                <span>Cycle Update: {asset.next}</span>
                             </div>
                         </motion.div>
                     ))}
                 </div>
             ) : null}
 
-            <div className="glass-morphism p-6 rounded-2xl min-h-[300px] flex flex-col">
-                <h3 className="font-bold mb-4 flex items-center gap-2">
-                    <Shield size={18} className="text-airport-accent" />
-                    Vision Analysis History
+            <div className="glass-morphism p-8 rounded-[2.5rem] min-h-[350px] flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-airport-accent/5 blur-[100px] -mr-32 -mt-32" />
+                <h3 className="font-black text-white mb-8 flex items-center gap-3">
+                    <div className="p-2 bg-airport-accent/10 rounded-lg">
+                        <Shield size={18} className="text-airport-accent" />
+                    </div>
+                    Vision Analytics Audit Log
                 </h3>
-                <div className="flex-1 rounded-xl bg-black/20 p-4 space-y-3">
+                <div className="flex-1 rounded-2xl bg-black/30 p-6 space-y-4 overflow-y-auto custom-scrollbar">
                     {[
-                        { time: '14:20', text: 'Runway 04: Minor surface crack detected via thermal imaging.', severity: 'low' },
-                        { time: '13:45', text: 'Gate A1: Hydraulic pressure within nominal range (+0.2%).', severity: 'info' },
-                        { time: '11:12', text: 'Security Scanner T1: X-ray tube wear exceeded 85%. replacement required.', severity: 'high' }
+                        { time: '14:20:12', text: 'Runway 04: Minor surface crack detected via thermal imaging. Scheduling non-intrusive scan.', severity: 'low' },
+                        { time: '13:45:05', text: 'Gate A1: Hydraulic collective pressure within nominal range (+0.2% variance).', severity: 'info' },
+                        { time: '11:12:44', text: 'Security Scanner T1: X-ray tube wear exceeded 85%. Urgent replacement task generated.', severity: 'high' }
                     ].map((log, i) => (
-                        <div key={i} className="flex gap-4 items-center text-xs p-3 rounded-lg border border-white/5 bg-white/5">
-                            <span className="font-mono text-slate-500">{log.time}</span>
-                            <span className="flex-1 text-slate-300">{log.text}</span>
-                            <span className={`px-2 py-0.5 rounded uppercase font-bold text-[9px] ${log.severity === 'high' ? 'bg-red-500/20 text-red-500' : log.severity === 'low' ? 'bg-orange-500/20 text-orange-500' : 'bg-blue-500/20 text-blue-500'
+                        <div key={i} className="flex gap-4 items-start text-xs p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group/log">
+                            <span className="font-mono text-slate-600 font-bold tracking-tighter pt-0.5">{log.time}</span>
+                            <span className="flex-1 text-slate-300 font-medium leading-relaxed">{log.text}</span>
+                            <span className={`status-badge shrink-0 ${log.severity === 'high' ? 'status-badge-danger' :
+                                    log.severity === 'low' ? 'status-badge-warning' : 'status-badge-success'
                                 }`}>
                                 {log.severity}
                             </span>

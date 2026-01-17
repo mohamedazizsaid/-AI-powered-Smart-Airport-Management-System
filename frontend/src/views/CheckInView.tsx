@@ -1,14 +1,49 @@
-import React, { useState } from 'react';
-import { Plane, User, CheckCircle, MapPin, Search, Mic, MicOff, Camera, Navigation, ShieldCheck, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plane, User as UserIcon, CheckCircle, MapPin, Search, Mic, MicOff, Camera, Navigation, ShieldCheck, FileText, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import { useApiStore } from '../store/apiStore';
 
 const CheckInView: React.FC = () => {
+    const { user } = useAuthStore();
+    const { flights, fetchFlights } = useApiStore();
+
     const [step, setStep] = useState(1);
     const [isListening, setIsListening] = useState(false);
     const [showAR, setShowAR] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
+    const [bookingRef, setBookingRef] = useState('');
+    const [selectedFlight, setSelectedFlight] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const nextStep = () => setStep(prev => prev + 1);
+    useEffect(() => {
+        if (flights.length === 0) {
+            fetchFlights();
+        }
+    }, [fetchFlights, flights.length]);
+
+    const nextStep = () => setStep((prev: number) => prev + 1);
+
+    const handleFindFlight = () => {
+        setError(null);
+        if (!bookingRef) {
+            setError('Please enter your Booking Reference');
+            return;
+        }
+
+        // Simulate flight lookup against real flights
+        // In a real app, this would be an API call with bookingRef
+        // For demo, we'll pick a flight that matches the Ref or just the first one
+        const flight = flights.find(f => f.flightNumber.includes(bookingRef.toUpperCase())) || flights[0];
+
+        if (flight) {
+            setSelectedFlight(flight);
+            nextStep();
+        } else {
+            setError('No flight found for this reference.');
+        }
+    };
 
     const simulateScan = () => {
         setIsScanning(true);
@@ -27,6 +62,11 @@ const CheckInView: React.FC = () => {
         <div className="min-h-screen bg-[#050811] text-white p-6 font-sans overflow-hidden">
             <div className="max-w-md mx-auto pt-10">
                 <header className="mb-10 text-center relative">
+                    <div className="absolute top-0 left-0">
+                        <Link to="/" className="p-2 text-slate-500 hover:text-white transition-colors">
+                            <ArrowLeft size={20} />
+                        </Link>
+                    </div>
                     <div className="w-16 h-16 bg-airport-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-airport-accent/30">
                         <Plane className="text-airport-accent" size={32} />
                     </div>
@@ -57,6 +97,8 @@ const CheckInView: React.FC = () => {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                                         <input
                                             type="text"
+                                            value={bookingRef}
+                                            onChange={(e) => setBookingRef(e.target.value)}
                                             placeholder="e.g. XY72B1"
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-airport-accent outline-none font-mono text-lg transition-all"
                                         />
@@ -66,14 +108,16 @@ const CheckInView: React.FC = () => {
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Last Name</label>
                                     <input
                                         type="text"
+                                        defaultValue={user?.name.split(' ').pop()}
                                         placeholder="Enter your family name"
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 focus:ring-2 focus:ring-airport-accent outline-none transition-all"
                                     />
                                 </div>
+                                {error && <p className="text-xs text-red-400 pl-1">{error}</p>}
                             </div>
 
                             <button
-                                onClick={nextStep}
+                                onClick={handleFindFlight}
                                 className="w-full bg-airport-accent py-4 rounded-2xl font-bold text-lg shadow-lg shadow-airport-accent/30 active:scale-95 transition-all text-white"
                             >
                                 Find My Flight
@@ -105,7 +149,7 @@ const CheckInView: React.FC = () => {
                                             transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                                             className="absolute left-0 right-0 h-0.5 bg-blue-400 shadow-[0_0_15px_#60a5fa] z-10"
                                         />
-                                        <User className="text-white/20" size={64} />
+                                        <UserIcon className="text-white/20" size={64} />
                                         <div className="absolute top-4 left-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest">Scanning Bio-Data...</div>
                                     </>
                                 ) : (
@@ -143,18 +187,20 @@ const CheckInView: React.FC = () => {
                                     <div className="flex justify-between items-center mb-6">
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Flight Number</p>
-                                            <p className="text-xl font-black">BA-2291</p>
+                                            <p className="text-xl font-black">{selectedFlight?.flightNumber || 'BA-2291'}</p>
                                         </div>
                                         <div className="text-right space-y-1">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Gate Queue</p>
-                                            <p className="text-sm font-bold text-emerald-500 italic">5 min (Fast)</p>
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Status</p>
+                                            <p className={`text-sm font-bold italic ${selectedFlight?.status === 'Delayed' ? 'text-orange-500' : 'text-emerald-500'}`}>
+                                                {selectedFlight?.status || 'On Time'}
+                                            </p>
                                         </div>
                                     </div>
 
                                     <div className="flex justify-between items-center py-6 border-y border-white/5 relative">
                                         <div className="text-center">
-                                            <p className="text-2xl font-black">LHR</p>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase">London</p>
+                                            <p className="text-2xl font-black">{selectedFlight?.origin || 'LHR'}</p>
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase">Origin</p>
                                         </div>
                                         <div className="flex-1 px-4 flex flex-col items-center">
                                             <div className="w-full h-px bg-white/10 relative">
@@ -168,24 +214,24 @@ const CheckInView: React.FC = () => {
                                             <Plane className="text-slate-700 my-2" size={16} />
                                         </div>
                                         <div className="text-center">
-                                            <p className="text-2xl font-black">DXB</p>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase">Dubai</p>
+                                            <p className="text-2xl font-black">{selectedFlight?.destination || 'DXB'}</p>
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase">Destination</p>
                                         </div>
                                     </div>
 
                                     <div className="pt-6 space-y-4">
                                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5">
-                                            <User className="text-airport-accent" size={20} />
+                                            <UserIcon className="text-airport-accent" size={20} />
                                             <div>
                                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Verified Passenger</p>
-                                                <p className="text-sm font-bold uppercase">M. AZIZ SAID</p>
+                                                <p className="text-sm font-bold uppercase">{user?.name || 'M. AZIZ SAID'}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
                                             <MapPin className="text-emerald-500" size={20} />
                                             <div className="flex-1">
                                                 <p className="text-[10px] font-black text-emerald-500 uppercase">Smart Gate Assigned</p>
-                                                <p className="text-sm font-bold text-emerald-100 italic">Gate B12 (Fast Track)</p>
+                                                <p className="text-sm font-bold text-emerald-100 italic">Gate {selectedFlight?.gateAssignment || 'B12'} (Fast Track)</p>
                                             </div>
                                             <button
                                                 onClick={() => setShowAR(true)}

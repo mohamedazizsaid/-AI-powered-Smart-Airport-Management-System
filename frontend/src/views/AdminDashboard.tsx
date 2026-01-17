@@ -8,31 +8,40 @@ import {
     Package,
     Activity,
     Info,
-    User,
     DollarSign,
     Leaf,
     BarChart,
-    Loader2,
     RefreshCw,
+    LogOut,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MaintenanceView from './MaintenanceView';
 import StaffView from './StaffView';
 import RevenueView from './RevenueView';
 import EnvironmentView from './EnvironmentView';
 import { useApiStore } from '../store/apiStore';
+import { useAuthStore } from '../store/authStore';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { SkeletonStatCard } from '../components/ui/Skeleton';
 import { ErrorState } from '../components/ui/ErrorState';
+import { Button } from '../components/ui/Button';
 
 const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = React.useState('dashboard');
+
+    const { user, logout: logoutAuth } = useAuthStore();
+    const navigate = useNavigate();
 
     // Global store
     const {
         flights,
         flightsState,
         fetchFlights,
+        fetchStaff,
+        fetchMaintenanceAssets,
+        fetchDynamicPricing,
+        fetchEnvironmentStats,
         securityAlerts,
         flightUpdates,
     } = useApiStore();
@@ -40,10 +49,19 @@ const AdminDashboard: React.FC = () => {
     // WebSocket connection for real-time updates
     useWebSocket();
 
-    // Fetch flights on mount
+    // Fetch all data on mount
     useEffect(() => {
-        fetchFlights();
-    }, [fetchFlights]);
+        const fetchAll = async () => {
+            await Promise.all([
+                fetchFlights(),
+                fetchStaff(),
+                fetchMaintenanceAssets(),
+                fetchDynamicPricing(),
+                fetchEnvironmentStats(),
+            ]);
+        };
+        fetchAll();
+    }, [fetchFlights, fetchStaff, fetchMaintenanceAssets, fetchDynamicPricing, fetchEnvironmentStats]);
 
     // Combine security alerts from WebSocket with local alerts
     const allAlerts = useMemo(() => {
@@ -108,31 +126,45 @@ const AdminDashboard: React.FC = () => {
                     </span>
                 </div>
 
-                <nav className="flex-1 space-y-1">
+                <nav className="flex-1 space-y-2 overflow-y-auto custom-scrollbar pr-2">
                     {menuItems.map((item) => (
                         <button
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === item.id
-                                ? 'bg-airport-accent text-white shadow-lg shadow-airport-accent/20'
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${activeTab === item.id
+                                ? 'bg-airport-accent text-white shadow-[0_0_20px_rgba(59,130,246,0.25)]'
+                                : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
                                 }`}
                         >
-                            {item.icon}
-                            <span className="font-medium text-xs tracking-wide">{item.label}</span>
+                            <div className={`transition-transform duration-300 ${activeTab === item.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                                {item.icon}
+                            </div>
+                            <span className={`font-semibold text-[11px] uppercase tracking-[0.1em] transition-all ${activeTab === item.id ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                                {item.label}
+                            </span>
                         </button>
                     ))}
                 </nav>
 
                 <div className="mt-auto pt-6 border-t border-white/10">
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 overflow-hidden">
-                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
-                            <User size={20} className="text-slate-300" />
+                        <div className="w-10 h-10 rounded-full bg-airport-accent/10 border border-airport-accent/20 flex items-center justify-center shrink-0">
+                            <span className="text-airport-accent font-bold">{user?.name?.charAt(0) || 'A'}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate">Admin User</p>
-                            <p className="text-[10px] text-slate-500 truncate">System Lead</p>
+                            <p className="text-xs font-semibold truncate">{user?.name || 'Admin User'}</p>
+                            <p className="text-[10px] text-slate-500 truncate capitalize">{user?.role || 'System Lead'}</p>
                         </div>
+                        <button
+                            onClick={() => {
+                                logoutAuth();
+                                navigate('/login');
+                            }}
+                            className="p-1.5 hover:bg-white/10 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                            title="Logout"
+                        >
+                            <LogOut size={14} />
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -144,34 +176,31 @@ const AdminDashboard: React.FC = () => {
                         <>
                             <header className="flex flex-wrap justify-between items-start gap-4 mb-10">
                                 <div>
-                                    <h1 className="text-3xl font-bold tracking-tight">Airport Overview</h1>
-                                    <p className="text-slate-500 text-sm mt-1">Real-time status of Smart Airport operations</p>
+                                    <h1 className="text-4xl font-black tracking-tight text-white mb-2">Operational Hub</h1>
+                                    <p className="text-slate-400 text-sm font-medium">Real-time AI monitoring of Terminal Operations</p>
                                 </div>
                                 <div className="flex gap-4">
                                     {allAlerts.length > 0 && (
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
-                                            className="animate-pulse bg-red-500/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+                                            className="bg-red-500/10 text-red-500 border border-red-500/20 px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2"
                                         >
-                                            <Shield size={14} /> {allAlerts.length} NEW SECURITY ALERTS
+                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                                            {allAlerts.length} SECURITY ANOMALIES
                                         </motion.div>
                                     )}
-                                    <button className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-medium flex items-center gap-2 border border-white/5 transition-colors">
-                                        <Info size={16} /> Help
+                                    <button className="px-4 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] text-white text-sm font-bold flex items-center gap-2 border border-white/5 transition-all active:scale-95">
+                                        <Info size={16} className="text-airport-accent" /> System Status
                                     </button>
-                                    <button
+                                    <Button
                                         onClick={handleRunOptimization}
-                                        disabled={flightsState.isLoading}
-                                        className="px-4 py-2 rounded-xl bg-airport-accent hover:bg-airport-accent/80 text-sm font-medium shadow-lg shadow-airport-accent/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                        isLoading={flightsState.isLoading}
+                                        className="shadow-xl"
+                                        icon={<RefreshCw size={16} />}
                                     >
-                                        {flightsState.isLoading ? (
-                                            <Loader2 size={16} className="animate-spin" />
-                                        ) : (
-                                            <RefreshCw size={16} />
-                                        )}
-                                        Run AI Optimization
-                                    </button>
+                                        Run AI Sync
+                                    </Button>
                                 </div>
                             </header>
 
@@ -181,125 +210,131 @@ const AdminDashboard: React.FC = () => {
                                     message={flightsState.error}
                                     onRetry={fetchFlights}
                                     compact
-                                    className="mb-6"
+                                    className="mb-8"
                                 />
                             )}
 
                             {/* Stat Cards */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                                 {flightsState.isLoading && flights.length === 0 ? (
                                     [1, 2, 3, 4].map((i) => <SkeletonStatCard key={i} />)
                                 ) : (
                                     <>
                                         <StatCard
-                                            icon={<Plane className="text-blue-500" />}
-                                            label="Active Flights"
+                                            icon={<Plane className="text-blue-400" />}
+                                            label="Live Traffic"
                                             value={activeFlights}
                                             trend={12}
-                                            color="bg-blue-500"
+                                            color="blue"
                                         />
                                         <StatCard
-                                            icon={<Users className="text-emerald-500" />}
-                                            label="Passenger Flow"
+                                            icon={<Users className="text-emerald-400" />}
+                                            label="Pax Throughput"
                                             value="3,420/hr"
                                             trend={5}
-                                            color="bg-emerald-500"
+                                            color="emerald"
                                         />
                                         <StatCard
-                                            icon={<Shield className="text-orange-500" />}
-                                            label="Security Alerts"
+                                            icon={<Shield className="text-orange-400" />}
+                                            label="Sec Analytics"
                                             value={10 + allAlerts.length}
                                             trend={-20}
-                                            color="bg-orange-500"
+                                            color="orange"
                                         />
                                         <StatCard
-                                            icon={<Activity className="text-purple-500" />}
-                                            label="System Health"
+                                            icon={<Activity className="text-purple-400" />}
+                                            label="System Vitals"
                                             value="99.8%"
                                             trend={0.1}
-                                            color="bg-purple-500"
+                                            color="purple"
                                         />
                                     </>
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                                <div className="lg:col-span-2 glass-morphism p-8 rounded-[2rem] h-[400px] flex flex-col border border-white/5">
-                                    <h3 className="font-bold mb-6 text-slate-200 flex items-center gap-2">
-                                        <BarChart size={18} className="text-airport-accent" />
-                                        Live Operational Activity
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+                                <div className="lg:col-span-2 glass-morphism p-8 rounded-[2.5rem] h-[450px] flex flex-col relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-airport-accent/5 blur-[100px] -mr-32 -mt-32" />
+                                    <h3 className="font-black text-white mb-8 flex items-center gap-3">
+                                        <div className="p-2 bg-airport-accent/10 rounded-lg">
+                                            <BarChart size={18} className="text-airport-accent" />
+                                        </div>
+                                        Live Operations Feed
                                     </h3>
-                                    <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar mask-gradient-b">
                                         {allAlerts.map((alert, i) => (
                                             <motion.div
                                                 key={i}
                                                 initial={{ x: -20, opacity: 0 }}
                                                 animate={{ x: 0, opacity: 1 }}
-                                                className="p-5 rounded-2xl bg-red-500/5 border border-red-500/10 flex justify-between items-center"
+                                                className="p-6 rounded-2xl bg-red-500/[0.03] border border-red-500/10 flex justify-between items-center group/item hover:bg-red-500/[0.05] transition-all"
                                             >
                                                 <div>
-                                                    <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">
-                                                        {alert.type}
-                                                    </p>
-                                                    <p className="text-sm font-semibold text-slate-200">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest px-2 py-0.5 bg-red-500/10 rounded">
+                                                            {alert.type}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-500 font-mono">{alert.timestamp}</span>
+                                                    </div>
+                                                    <p className="text-sm font-bold text-slate-200 group-hover/item:text-white transition-colors">
                                                         {alert.message}
                                                     </p>
-                                                    <p className="text-[10px] text-slate-500 mt-2 font-medium">
-                                                        LOCATION: <span className="text-slate-300">{alert.location}</span>
+                                                    <p className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">
+                                                        ZONE ID: <span className="text-slate-400">{alert.location}</span>
                                                     </p>
                                                 </div>
-                                                <span className="text-[10px] bg-red-500/20 px-3 py-1.5 rounded-lg text-red-500 font-mono font-bold">
-                                                    {alert.timestamp}
-                                                </span>
+                                                <div className="w-8 h-8 rounded-full border border-red-500/20 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                    <Shield size={14} className="text-red-500" />
+                                                </div>
                                             </motion.div>
                                         ))}
                                         {/* Flight updates */}
                                         {flightUpdates.slice(0, 3).map((update, i) => (
-                                            <div key={`flight-${i}`} className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex justify-between items-center">
+                                            <div key={`flight-${i}`} className="p-6 rounded-2xl bg-blue-500/[0.03] border border-blue-500/10 flex justify-between items-center group/item hover:bg-blue-500/[0.05] transition-all">
                                                 <div>
-                                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                                                        Flight Update
-                                                    </p>
-                                                    <p className="text-sm font-semibold text-slate-200">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest px-2 py-0.5 bg-blue-500/10 rounded">
+                                                            AIRCRAFT UPDATE
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-500 font-mono">{new Date(update.timestamp).toLocaleTimeString()}</span>
+                                                    </div>
+                                                    <p className="text-sm font-bold text-slate-200 group-hover/item:text-white transition-colors">
                                                         {update.flightNumber} - {update.status}
                                                         {update.gate && ` assigned to Gate ${update.gate}`}
                                                     </p>
                                                 </div>
-                                                <span className="text-[10px] bg-blue-500/20 px-3 py-1.5 rounded-lg text-blue-400 font-mono">
-                                                    {new Date(update.timestamp).toLocaleTimeString()}
-                                                </span>
                                             </div>
                                         ))}
-                                        <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center opacity-60">
-                                            <div>
-                                                <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                                                    Flight Update
-                                                </p>
-                                                <p className="text-sm font-semibold text-slate-200">
-                                                    BA123 assigned to Gate B4
-                                                </p>
-                                            </div>
-                                            <span className="text-[10px] bg-white/10 px-3 py-1.5 rounded-lg text-slate-400 font-mono">
-                                                14:10:02
-                                            </span>
-                                        </div>
                                     </div>
                                 </div>
-                                <div className="glass-morphism p-8 rounded-[2rem] h-[400px] flex flex-col border border-white/5">
-                                    <h3 className="font-bold mb-6 text-slate-200">Security CV Monitoring</h3>
-                                    <div className="flex-1 rounded-[1.5rem] bg-black/60 relative overflow-hidden flex items-center justify-center border border-white/10 group">
-                                        <div className="absolute top-6 left-6 flex gap-3 z-10">
-                                            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></span>
-                                            <span className="text-[10px] font-black text-red-500 tracking-[0.2em] uppercase">Live CAM-04</span>
+                                <div className="glass-morphism p-8 rounded-[2.5rem] h-[450px] flex flex-col">
+                                    <h3 className="font-black text-white mb-8 flex items-center gap-3">
+                                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                                            <Shield size={18} className="text-emerald-500" />
                                         </div>
-                                        <Shield className="opacity-10 text-airport-accent transition-transform duration-700 group-hover:scale-110" size={100} />
-                                        <div className="absolute bottom-6 left-6 right-6 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: '100%' }}
-                                                transition={{ duration: 5, repeat: Infinity }}
-                                                className="h-full bg-airport-accent shadow-[0_0_15px_#3b82f6]"
-                                            />
+                                        AI Sentinel Vision
+                                    </h3>
+                                    <div className="flex-1 rounded-3xl bg-black/60 relative overflow-hidden flex items-center justify-center border border-white/10 group shadow-inner">
+                                        <div className="absolute top-6 left-6 flex gap-3 z-10 p-2 bg-black/40 backdrop-blur-md rounded-lg border border-white/5">
+                                            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_#ef4444]"></span>
+                                            <span className="text-[10px] font-black text-white tracking-[0.2em] uppercase">CAM_SEC_044</span>
+                                        </div>
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+                                        <Shield className="opacity-10 text-airport-accent transition-transform duration-1000 group-hover:scale-110" size={100} />
+
+                                        <div className="absolute bottom-6 left-6 right-6 p-4 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Scanning Network...</span>
+                                                <span className="text-[9px] font-mono text-airport-accent">94.2% CONFIDENCE</span>
+                                            </div>
+                                            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: '100%' }}
+                                                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                                                    className="h-full bg-airport-accent shadow-[0_0_15px_#3b82f6]"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
