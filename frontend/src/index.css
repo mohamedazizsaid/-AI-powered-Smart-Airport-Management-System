@@ -2,30 +2,357 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================
+   Smart Airport Design System
+   ======================== */
+
 :root {
-  --airport-bg: #0f172a;
+  /* Core colors */
+  --airport-bg: #050811;
+  --airport-surface: rgba(255, 255, 255, 0.03);
+  --airport-border: rgba(255, 255, 255, 0.06);
+  --airport-accent: #3b82f6;
+  --airport-accent-glow: rgba(59, 130, 246, 0.3);
+
+  /* Semantic colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #6366f1;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-dark: linear-gradient(180deg, #0f172a 0%, #050811 100%);
+}
+
+/* ========================
+   Base Styles
+   ======================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--airport-bg);
+  background: var(--airport-bg);
   color: white;
+  line-height: 1.5;
 }
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================
+   Glass Morphism & Surfaces
+   ======================== */
 
 .glass-morphism {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--airport-border);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.glass-morphism-hover {
+  transition: all 0.3s ease;
+}
+
+.glass-morphism-hover:hover {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ========================
+   Typography
+   ======================== */
+
 .gradient-text {
-  background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-glow {
+  text-shadow: 0 0 20px var(--airport-accent-glow);
+}
+
+/* ========================
+   Buttons
+   ======================== */
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px var(--airport-accent-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--airport-accent-glow);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--airport-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================
+   Cards & Panels
+   ======================== */
+
+.card {
+  background: var(--airport-surface);
+  border: 1px solid var(--airport-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================
+   Scrollbars
+   ======================== */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+
+/* ========================
+   Animations
+   ======================== */
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px var(--airport-accent-glow);
+  }
+
+  50% {
+    box-shadow: 0 0 25px var(--airport-accent-glow), 0 0 50px var(--airport-accent-glow);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* ========================
+   Status Indicators
+   ======================== */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.live {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.status-dot.success {
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success);
+}
+
+.status-dot.warning {
+  background: var(--warning);
+  box-shadow: 0 0 10px var(--warning);
+}
+
+/* ========================
+   Grid & Layout Utilities
+   ======================== */
+
+.dashboard-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ========================
+   Sidebar Specific
+   ======================== */
+
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg,
+      rgba(15, 23, 42, 0.95) 0%,
+      rgba(5, 8, 17, 0.98) 100%);
+  border-right: 1px solid var(--airport-border);
+}
+
+/* ========================
+   Responsive Tweaks
+   ======================== */
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    z-index: 1000;
+    transition: left 0.3s ease;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+}
+
+/* ========================
+   Focus States (Accessibility)
+   ======================== */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--airport-accent);
+  outline-offset: 2px;
+}
+
+/* ========================
+   Selection
+   ======================== */
+
+::selection {
+  background: var(--airport-accent);
+  color: white;
 }

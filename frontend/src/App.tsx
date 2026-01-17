@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import AdminDashboard from './views/AdminDashboard';
 import CheckInView from './views/CheckInView';
 import AIChatbot from './components/AIChatbot';

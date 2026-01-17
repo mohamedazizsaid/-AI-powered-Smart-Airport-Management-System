@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import {
     LayoutDashboard,
     Plane,
@@ -12,30 +12,76 @@ import {
     DollarSign,
     Leaf,
     BarChart,
+    Loader2,
+    RefreshCw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import MaintenanceView from './MaintenanceView';
 import StaffView from './StaffView';
 import RevenueView from './RevenueView';
 import EnvironmentView from './EnvironmentView';
+import { useApiStore } from '../store/apiStore';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { SkeletonStatCard } from '../components/ui/Skeleton';
+import { ErrorState } from '../components/ui/ErrorState';
 
 const AdminDashboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const [alerts, setAlerts] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = React.useState('dashboard');
 
-    // Simulation of WebSocket behavior for security alerts
+    // Global store
+    const {
+        flights,
+        flightsState,
+        fetchFlights,
+        securityAlerts,
+        flightUpdates,
+    } = useApiStore();
+
+    // WebSocket connection for real-time updates
+    useWebSocket();
+
+    // Fetch flights on mount
     useEffect(() => {
-        const timer = setTimeout(() => {
-            const mockAlert = {
-                type: 'Security Anomaly',
-                location: 'Zone C2',
-                message: 'Unattended object detected by AI vision',
-                timestamp: new Date().toLocaleTimeString(),
-            };
-            setAlerts((prev) => [mockAlert, ...prev]);
-        }, 8000);
-        return () => clearTimeout(timer);
-    }, []);
+        fetchFlights();
+    }, [fetchFlights]);
+
+    // Combine security alerts from WebSocket with local alerts
+    const allAlerts = useMemo(() => {
+        const wsAlerts = securityAlerts.map(alert => ({
+            type: alert.type || 'Security Anomaly',
+            location: alert.location || 'Unknown',
+            message: alert.message || 'AI-detected security event',
+            timestamp: new Date(alert.timestamp).toLocaleTimeString(),
+        }));
+        return wsAlerts;
+    }, [securityAlerts]);
+
+    // Simulate initial alert for demo if no real alerts
+    useEffect(() => {
+        if (allAlerts.length === 0) {
+            const timer = setTimeout(() => {
+                useApiStore.getState().addSecurityAlert({
+                    type: 'Security Anomaly',
+                    location: 'Zone C2',
+                    message: 'Unattended object detected by AI vision',
+                    timestamp: new Date().toISOString(),
+                    risk_level: 'elevated',
+                    anomalies: [],
+                });
+            }, 8000);
+            return () => clearTimeout(timer);
+        }
+    }, [allAlerts.length]);
+
+    // Derived stats
+    const activeFlights = flights.filter(f =>
+        f.status === 'Scheduled' || f.status === 'Departed'
+    ).length || 128;
+
+    const handleRunOptimization = useCallback(async () => {
+        // Trigger AI optimization
+        await fetchFlights();
+    }, [fetchFlights]);
 
     const menuItems = [
         { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
@@ -50,9 +96,9 @@ const AdminDashboard: React.FC = () => {
     ];
 
     return (
-        <div className="flex min-h-screen bg-[#050811] text-white">
+        <div className="flex min-h-screen bg-[#050811] text-white bg-gradient-mesh">
             {/* Sidebar */}
-            <div className="w-64 glass-morphism h-screen flex flex-col p-6 sticky top-0 border-r border-white/5">
+            <aside className="w-64 min-w-[256px] shrink-0 h-screen flex flex-col p-6 sticky top-0 border-r border-white/5 bg-gradient-to-b from-slate-900/95 to-[#050811]/98 backdrop-blur-xl">
                 <div className="flex items-center gap-3 mb-10">
                     <div className="w-8 h-8 bg-airport-accent rounded-lg flex items-center justify-center">
                         <Plane className="text-white rotate-45" size={20} />
@@ -68,8 +114,8 @@ const AdminDashboard: React.FC = () => {
                             key={item.id}
                             onClick={() => setActiveTab(item.id)}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === item.id
-                                    ? 'bg-airport-accent text-white shadow-lg shadow-airport-accent/20'
-                                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                ? 'bg-airport-accent text-white shadow-lg shadow-airport-accent/20'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
                             {item.icon}
@@ -89,66 +135,92 @@ const AdminDashboard: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-8 overflow-y-auto">
+            <main className="flex-1 p-8 overflow-y-auto min-w-0">
                 <div className="max-w-7xl mx-auto">
                     {activeTab === 'dashboard' ? (
                         <>
-                            <header className="flex justify-between items-start mb-10">
+                            <header className="flex flex-wrap justify-between items-start gap-4 mb-10">
                                 <div>
                                     <h1 className="text-3xl font-bold tracking-tight">Airport Overview</h1>
                                     <p className="text-slate-500 text-sm mt-1">Real-time status of Smart Airport operations</p>
                                 </div>
                                 <div className="flex gap-4">
-                                    {alerts.length > 0 && (
+                                    {allAlerts.length > 0 && (
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
                                             className="animate-pulse bg-red-500/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
                                         >
-                                            <Shield size={14} /> {alerts.length} NEW SECURITY ALERTS
+                                            <Shield size={14} /> {allAlerts.length} NEW SECURITY ALERTS
                                         </motion.div>
                                     )}
                                     <button className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-sm font-medium flex items-center gap-2 border border-white/5 transition-colors">
                                         <Info size={16} /> Help
                                     </button>
-                                    <button className="px-4 py-2 rounded-xl bg-airport-accent hover:bg-airport-accent/80 text-sm font-medium shadow-lg shadow-airport-accent/20 transition-all active:scale-95">
+                                    <button
+                                        onClick={handleRunOptimization}
+                                        disabled={flightsState.isLoading}
+                                        className="px-4 py-2 rounded-xl bg-airport-accent hover:bg-airport-accent/80 text-sm font-medium shadow-lg shadow-airport-accent/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {flightsState.isLoading ? (
+                                            <Loader2 size={16} className="animate-spin" />
+                                        ) : (
+                                            <RefreshCw size={16} />
+                                        )}
                                         Run AI Optimization
                                     </button>
                                 </div>
                             </header>
 
+                            {/* Error State */}
+                            {flightsState.error && (
+                                <ErrorState
+                                    message={flightsState.error}
+                                    onRetry={fetchFlights}
+                                    compact
+                                    className="mb-6"
+                                />
+                            )}
+
+                            {/* Stat Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                                <StatCard
-                                    icon={<Plane className="text-blue-500" />}
-                                    label="Active Flights"
-                                    value="128"
-                                    trend={12}
-                                    color="bg-blue-500"
-                                />
-                                <StatCard
-                                    icon={<Users className="text-emerald-500" />}
-                                    label="Passenger Flow"
-                                    value="3,420/hr"
-                                    trend={5}
-                                    color="bg-emerald-500"
-                                />
-                                <StatCard
-                                    icon={<Shield className="text-orange-500" />}
-                                    label="Security Alerts"
-                                    value={10 + alerts.length}
-                                    trend={-20}
-                                    color="bg-orange-500"
-                                />
-                                <StatCard
-                                    icon={<Activity className="text-purple-500" />}
-                                    label="System Health"
-                                    value="99.8%"
-                                    trend={0.1}
-                                    color="bg-purple-500"
-                                />
+                                {flightsState.isLoading && flights.length === 0 ? (
+                                    [1, 2, 3, 4].map((i) => <SkeletonStatCard key={i} />)
+                                ) : (
+                                    <>
+                                        <StatCard
+                                            icon={<Plane className="text-blue-500" />}
+                                            label="Active Flights"
+                                            value={activeFlights}
+                                            trend={12}
+                                            color="bg-blue-500"
+                                        />
+                                        <StatCard
+                                            icon={<Users className="text-emerald-500" />}
+                                            label="Passenger Flow"
+                                            value="3,420/hr"
+                                            trend={5}
+                                            color="bg-emerald-500"
+                                        />
+                                        <StatCard
+                                            icon={<Shield className="text-orange-500" />}
+                                            label="Security Alerts"
+                                            value={10 + allAlerts.length}
+                                            trend={-20}
+                                            color="bg-orange-500"
+                                        />
+                                        <StatCard
+                                            icon={<Activity className="text-purple-500" />}
+                                            label="System Health"
+                                            value="99.8%"
+                                            trend={0.1}
+                                            color="bg-purple-500"
+                                        />
+                                    </>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
@@ -158,7 +230,7 @@ const AdminDashboard: React.FC = () => {
                                         Live Operational Activity
                                     </h3>
                                     <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                                        {alerts.map((alert, i) => (
+                                        {allAlerts.map((alert, i) => (
                                             <motion.div
                                                 key={i}
                                                 initial={{ x: -20, opacity: 0 }}
@@ -180,6 +252,23 @@ const AdminDashboard: React.FC = () => {
                                                     {alert.timestamp}
                                                 </span>
                                             </motion.div>
+                                        ))}
+                                        {/* Flight updates */}
+                                        {flightUpdates.slice(0, 3).map((update, i) => (
+                                            <div key={`flight-${i}`} className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">
+                                                        Flight Update
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-slate-200">
+                                                        {update.flightNumber} - {update.status}
+                                                        {update.gate && ` assigned to Gate ${update.gate}`}
+                                                    </p>
+                                                </div>
+                                                <span className="text-[10px] bg-blue-500/20 px-3 py-1.5 rounded-lg text-blue-400 font-mono">
+                                                    {new Date(update.timestamp).toLocaleTimeString()}
+                                                </span>
+                                            </div>
                                         ))}
                                         <div className="p-5 rounded-2xl bg-white/5 border border-white/5 flex justify-between items-center opacity-60">
                                             <div>
@@ -271,7 +360,15 @@ const AdminDashboard: React.FC = () => {
     );
 };
 
-const StatCard = ({ icon, label, value, trend, color }: any) => (
+interface StatCardProps {
+    icon: React.ReactNode;
+    label: string;
+    value: string | number;
+    trend: number;
+    color: string;
+}
+
+const StatCard: React.FC<StatCardProps> = React.memo(({ icon, label, value, trend, color }) => (
     <div className="glass-morphism p-6 rounded-2xl flex flex-col gap-5 border border-white/5 hover:border-white/10 transition-all hover:translate-y-[-2px]">
         <div className="flex justify-between items-start">
             <div className={`p-3 rounded-2xl ${color} bg-opacity-10 text-opacity-100 shrink-0`}>
@@ -290,6 +387,8 @@ const StatCard = ({ icon, label, value, trend, color }: any) => (
             <p className="text-3xl font-black mt-1 tracking-tight">{value}</p>
         </div>
     </div>
-);
+));
+
+StatCard.displayName = 'StatCard';
 
 export default AdminDashboard;

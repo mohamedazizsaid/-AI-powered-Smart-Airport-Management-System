@@ -1,26 +1,20 @@
 import React, { useState } from 'react';
-import { MessageSquare, Send, X, Bot, Mic, MicOff } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, Mic, MicOff, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useChatbot } from '../hooks/useChatbot';
 
 const AIChatbot: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [messages, setMessages] = useState<{ role: 'user' | 'bot', text: string }[]>([
-        { role: 'bot', text: 'Hello! I am your AI Travel Assistant. How can I help you today?' }
-    ]);
     const [input, setInput] = useState('');
 
+    const { messages, isLoading, sendMessage } = useChatbot();
+
     const handleSend = async () => {
-        if (!input.trim()) return;
-
+        if (!input.trim() || isLoading) return;
         const userMsg = input;
-        setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
         setInput('');
-
-        // Simulate API call to backend AI-Gateway
-        setTimeout(() => {
-            setMessages(prev => [...prev, { role: 'bot', text: `I am processing your AI-powered request: "${userMsg}". Finding the best personalized options...` }]);
-        }, 1000);
+        await sendMessage(userMsg);
     };
 
     const toggleVoice = () => {
@@ -62,9 +56,27 @@ const AIChatbot: React.FC = () => {
                                         : 'bg-white/5 text-slate-200 rounded-tl-none border border-white/5'
                                         }`}>
                                         {msg.text}
+                                        {msg.sentiment && msg.sentiment !== 'NEUTRAL' && (
+                                            <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded ${msg.sentiment === 'POSITIVE' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-orange-500/20 text-orange-400'
+                                                }`}>
+                                                {msg.sentiment}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             ))}
+                            {isLoading && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex justify-start"
+                                >
+                                    <div className="bg-white/5 text-airport-accent p-3 rounded-2xl rounded-tl-none border border-airport-accent/20 flex items-center gap-2">
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span className="text-[10px] font-bold uppercase tracking-tighter">AI Processing...</span>
+                                    </div>
+                                </motion.div>
+                            )}
                             {isListening && (
                                 <motion.div
                                     initial={{ opacity: 0 }}
@@ -96,10 +108,15 @@ const AIChatbot: React.FC = () => {
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                                     placeholder="Ask your travel assistant..."
-                                    className="flex-1 bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-airport-accent text-white outline-none"
+                                    disabled={isLoading}
+                                    className="flex-1 bg-white/5 border border-white/5 rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-airport-accent text-white outline-none disabled:opacity-50"
                                 />
-                                <button onClick={handleSend} className="bg-airport-accent p-2 rounded-xl text-white shadow-lg shadow-airport-accent/20 active:scale-95 transition-transform">
-                                    <Send size={18} />
+                                <button
+                                    onClick={handleSend}
+                                    disabled={isLoading || !input.trim()}
+                                    className="bg-airport-accent p-2 rounded-xl text-white shadow-lg shadow-airport-accent/20 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                                 </button>
                             </div>
                         </div>
