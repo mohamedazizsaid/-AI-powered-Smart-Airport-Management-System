@@ -20,6 +20,10 @@ import MaintenanceView from './MaintenanceView';
 import StaffView from './StaffView';
 import RevenueView from './RevenueView';
 import EnvironmentView from './EnvironmentView';
+import FlightsView from './FlightsView';
+import SecurityView from './SecurityView';
+import BaggageView from './BaggageView';
+import SettingsView from './SettingsView';
 import { useApiStore } from '../store/apiStore';
 import { useAuthStore } from '../store/authStore';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -380,6 +384,14 @@ const AdminDashboard: React.FC = () => {
                         <RevenueView />
                     ) : activeTab === 'environment' ? (
                         <EnvironmentView />
+                    ) : activeTab === 'flights' ? (
+                        <FlightsView />
+                    ) : activeTab === 'security' ? (
+                        <SecurityView />
+                    ) : activeTab === 'baggage' ? (
+                        <BaggageView />
+                    ) : activeTab === 'settings' ? (
+                        <SettingsView />
                     ) : (
                         <div className="flex flex-col items-center justify-center h-[70vh] text-slate-500">
                             <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
